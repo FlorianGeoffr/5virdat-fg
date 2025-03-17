@@ -431,4 +431,8 @@ kubectl exec -it django-adminlte-deployment-67df864757-sqtvh -n dev -- /bin/bash
 python manage.py migrate
 ```
 
+![image](https://github.com/user-attachments/assets/8940e642-cf77-4d1b-86b0-e20d5dcb4a48)
+
+
+
 

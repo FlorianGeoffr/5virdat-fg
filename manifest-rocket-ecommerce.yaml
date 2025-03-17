@@ -1,0 +1,184 @@
+# Création des Namespaces
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: preprod
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+
+---
+# ConfigMap pour DEV
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rocket-ecommerce-config
+  namespace: dev
+data:
+  DEBUG: "TRUE"
+  FLASK_APP: "run.py"
+  FLASK_DEBUG: "True"
+  STRIPE_SECRET_KEY: "sk_test_DEV"
+  STRIPE_PUBLISHABLE_KEY: "pk_test_DEV"
+  SERVEUR_ADDRESS: "http://localhost:5005/"
+---
+# ConfigMap pour PREPROD
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rocket-ecommerce-config
+  namespace: preprod
+data:
+  DEBUG: "FALSE"
+  FLASK_APP: "run.py"
+  FLASK_DEBUG: "False"
+  STRIPE_SECRET_KEY: "sk_test_PREPROD"
+  STRIPE_PUBLISHABLE_KEY: "pk_test_PREPROD"
+  SERVEUR_ADDRESS: "http://localhost:5005/"
+---
+# ConfigMap pour PROD
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rocket-ecommerce-config
+  namespace: prod
+data:
+  DEBUG: "FALSE"
+  FLASK_APP: "run.py"
+  FLASK_DEBUG: "False"
+  STRIPE_SECRET_KEY: "sk_test_PROD"
+  STRIPE_PUBLISHABLE_KEY: "pk_test_PROD"
+  SERVEUR_ADDRESS: "http://localhost:5005/"
+---
+# Deployment pour DEV
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rocket-ecommerce-deployment
+  namespace: dev
+  labels:
+    app: rocket-ecommerce
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rocket-ecommerce
+  template:
+    metadata:
+      labels:
+        app: rocket-ecommerce
+    spec:
+      containers:
+      - name: rocket-ecommerce
+        image: floriangeoffr/rocket-ecommerce:latest
+        ports:
+        - containerPort: 5005
+        envFrom:
+        - configMapRef:
+            name: rocket-ecommerce-config
+---
+# Deployment pour PREPROD
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rocket-ecommerce-deployment
+  namespace: preprod
+  labels:
+    app: rocket-ecommerce
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rocket-ecommerce
+  template:
+    metadata:
+      labels:
+        app: rocket-ecommerce
+    spec:
+      containers:
+      - name: rocket-ecommerce
+        image: floriangeoffr/rocket-ecommerce:latest
+        ports:
+        - containerPort: 5005
+        envFrom:
+        - configMapRef:
+            name: rocket-ecommerce-config
+---
+# Deployment pour PROD
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rocket-ecommerce-deployment
+  namespace: prod
+  labels:
+    app: rocket-ecommerce
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rocket-ecommerce
+  template:
+    metadata:
+      labels:
+        app: rocket-ecommerce
+    spec:
+      containers:
+      - name: rocket-ecommerce
+        image: floriangeoffr/rocket-ecommerce:latest
+        ports:
+        - containerPort: 5005
+        envFrom:
+        - configMapRef:
+            name: rocket-ecommerce-config
+---
+# Service pour DEV (Port 30081)
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocket-ecommerce-service
+  namespace: dev
+spec:
+  selector:
+    app: rocket-ecommerce
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 5005
+      nodePort: 30081
+---
+# Service pour PREPROD (Port 30082)
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocket-ecommerce-service
+  namespace: preprod
+spec:
+  selector:
+    app: rocket-ecommerce
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 5005
+      nodePort: 30082
+---
+# Service pour PROD (Port 30083)
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocket-ecommerce-service
+  namespace: prod
+spec:
+  selector:
+    app: rocket-ecommerce
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 5005
+      nodePort: 30083

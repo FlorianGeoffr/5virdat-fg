@@ -400,3 +400,35 @@ Avec cette architecture Kubernetes, l’application *Rocket-Ecommerce* est sépa
 Chaque mise à jour peut être testée en *preprod* avant d’aller en *prod*, garantissant un déploiement sécurisé et sans interruption. 🚀  
 
 
+# Adminlte-pro
+
+## Introduction
+
+Cette deuxième application, **Django-Adminlte**, est une application Django qui fonctionne avec une base de données MySQL. Pour des raisons de temps, l'application est uniquement déployée dans le namespace `dev`.
+
+## Étapes du Déploiement
+
+### Téléchargement du Manifest YAML
+
+Clone le fichier YAML contenant les configurations nécessaires avec `git clone`.
+
+### Application du Manifest
+
+Applique le manifest sur le namespace `dev` :
+```bash
+kubectl apply -f django-adminlte.yaml
+```
+## Utilisation des Secrets
+
+Dans ce manifest, nous utilisons un **Secret** Kubernetes pour stocker des informations sensibles telles que des mots de passe et des clés d'API. Ces données sont encodées en base64 afin de garantir leur sécurité et de ne pas les exposer en texte clair.
+
+## Création de la Base de Données
+
+Après avoir appliqué le manifest, une base de données MySQL est nécessaire. Pour cela, j’ai forcé la création de la base de données en accédant au pod de l’application et en exécutant les migrations Django :
+
+```bash
+kubectl exec -it django-adminlte-deployment-67df864757-sqtvh -n dev -- /bin/bash
+python manage.py migrate
+```
+
+

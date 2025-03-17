@@ -1,0 +1,316 @@
+---
+# ConfigMap pour DEV
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-adminlte-config
+  namespace: dev
+data:
+  DEBUG: "TRUE"
+  FLASK_APP: "run.py"
+  FLASK_DEBUG: "True"
+  DB_ENGINE: "mysql"
+  DB_HOST: "mysql-service-dev"
+  DB_NAME: "appseed_db_dev"
+  DB_USERNAME: "appseed_db_usr_dev"
+  DB_PASS: "pass_dev"
+  DB_PORT: "3306"
+---
+# ConfigMap pour PREPROD
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-adminlte-config
+  namespace: preprod
+data:
+  DEBUG: "FALSE"
+  FLASK_APP: "run.py"
+  FLASK_DEBUG: "False"
+  DB_ENGINE: "mysql"
+  DB_HOST: "mysql-service-preprod"
+  DB_NAME: "appseed_db_preprod"
+  DB_USERNAME: "appseed_db_usr_preprod"
+  DB_PASS: "pass_preprod"
+  DB_PORT: "3306"
+---
+# ConfigMap pour PROD
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-adminlte-config
+  namespace: prod
+data:
+  DEBUG: "FALSE"
+  FLASK_APP: "run.py"
+  FLASK_DEBUG: "False"
+  DB_ENGINE: "mysql"
+  DB_HOST: "mysql-service-prod"
+  DB_NAME: "appseed_db_prod"
+  DB_USERNAME: "appseed_db_usr_prod"
+  DB_PASS: "pass_prod"
+  DB_PORT: "3306"
+---
+# Correction: Encodage base64 correct des mots de passe pour les Secrets
+# Secret MySQL pour DEV
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret-dev
+  namespace: dev
+type: Opaque
+data:
+  MYSQL_ROOT_PASSWORD: "cGFzc19kZXY="  # pass_dev encodé en base64
+---
+# Secret MySQL pour PREPROD
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret-preprod
+  namespace: preprod
+type: Opaque
+data:
+  MYSQL_ROOT_PASSWORD: "cGFzc19wcmVwcm9k"  # pass_preprod encodé en base64
+---
+# Secret MySQL pour PROD
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret-prod
+  namespace: prod
+type: Opaque
+data:
+  MYSQL_ROOT_PASSWORD: "cGFzc19wcm9k"  # pass_prod encodé en base64
+---
+# Correction: Ajout des labels corrects pour MySQL
+# Deployment MySQL pour DEV
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment-dev
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: mysql
+        tier: database
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:5.7
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret-dev
+              key: MYSQL_ROOT_PASSWORD
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc-dev
+---
+# Correction: Ajout des labels corrects pour les autres environnements
+# Deployment MySQL pour PREPROD
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment-preprod
+  namespace: preprod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: mysql
+        tier: database
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:5.7
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret-preprod
+              key: MYSQL_ROOT_PASSWORD
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc-preprod
+---
+# Deployment MySQL pour PROD
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment-prod
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: mysql
+        tier: database
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:5.7
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret-prod
+              key: MYSQL_ROOT_PASSWORD
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc-prod
+---
+# Deployment pour DEV
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-adminlte-deployment
+  namespace: dev
+  labels:
+    app: django-adminlte
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django-adminlte
+  template:
+    metadata:
+      labels:
+        app: django-adminlte
+    spec:
+      containers:
+      - name: django-adminlte
+        image: antoinerotinat/django-adminlte:latest
+        ports:
+        - containerPort: 5005
+        envFrom:
+        - configMapRef:
+            name: django-adminlte-config
+---
+# Deployment pour PREPROD
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-adminlte-deployment
+  namespace: preprod
+  labels:
+    app: django-adminlte
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django-adminlte
+  template:
+    metadata:
+      labels:
+        app: django-adminlte
+    spec:
+      containers:
+      - name: django-adminlte
+        image: antoinerotinat/django-adminlte:latest
+        ports:
+        - containerPort: 5005
+        envFrom:
+        - configMapRef:
+            name: django-adminlte-config
+---
+# Deployment pour PROD
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-adminlte-deployment
+  namespace: prod
+  labels:
+    app: django-adminlte
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django-adminlte
+  template:
+    metadata:
+      labels:
+        app: django-adminlte
+    spec:
+      containers:
+      - name: django-adminlte
+        image: antoinerotinat/django-adminlte:latest
+        ports:
+        - containerPort: 5005
+        envFrom:
+        - configMapRef:
+            name: django-adminlte-config
+---
+# Correction: Ports harmonisés
+# Service pour DEV (Port 40081)
+apiVersion: v1
+kind: Service
+metadata:
+  name: django-adminlte-service
+  namespace: dev
+spec:
+  selector:
+    app: django-adminlte
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 5005
+      nodePort: 30084
+---
+# Service pour PREPROD (Port 40082)
+apiVersion: v1
+kind: Service
+metadata:
+  name: django-adminlte-service
+  namespace: preprod
+spec:
+  selector:
+    app: django-adminlte
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 5005
+      nodePort: 30085
+---
+# Service pour PROD (Port 40083)
+apiVersion: v1
+kind: Service
+metadata:
+  name: django-adminlte-service
+  namespace: prod
+spec:
+  selector:
+    app: django-adminlte
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 5005
+      nodePort: 30086
